@@ -49,7 +49,7 @@ function warn {
 # I tried to figure out how to actually determine the filesystem support for
 # copy-on-write, but did not find any good references, so I'm falling back on
 # "try and see if it fails"
-function cp_cow {    
+function cp_cow {
     if ! /bin/cp -Rc "$1" "$2" 2>/dev/null; then
         if ! /bin/cp -R --reflink "$1" "$2" 2>/dev/null; then
             if ! /bin/cp -R "$1" "$2" 2>/dev/null; then
@@ -76,11 +76,11 @@ function _worktree {
     # "quick-fix" stays unchanged
     # https://www.tldp.org/LDP/abs/html/parameter-substitution.html
     dirname=${branchname//\//_}
-    
+
     is_worktree=$(git rev-parse --is-inside-work-tree)
-    if $is_worktree; then        
-        parent_dir=".."    
-    else        
+    if $is_worktree; then
+        parent_dir=".."
+    else
         parent_dir="."
     fi
 
@@ -115,6 +115,11 @@ function _worktree {
     # packages in node_modules packages can have sub-node-modules packages, and
     # we don't want to copy them; only copy the root node_modules directory
     if [ -d "node_modules" ]; then
+      cp_cow node_modules "$parent_dir/$dirname"/node_modules
+    fi
+
+    # copy all vendor packages
+    if [ -d "vendor" ]; then
       cp_cow node_modules "$parent_dir/$dirname"/node_modules
     fi
 
@@ -164,14 +169,14 @@ function _worktree {
     fi
 
     git -C "$parent_dir/$dirname" pull
-    
+
 
     # if there was an envrc file, tell direnv that it's ok to run it
     if [ -f "$parent_dir/$dirname/.envrc" ]; then
         direnv allow "$parent_dir/$dirname"
     fi
-        
-    printf "%bcreated worktree %s%b\n" "$GREEN" "$parent_dir/$dirname" "$CLEAR"   
+
+    printf "%bcreated worktree %s%b\n" "$GREEN" "$parent_dir/$dirname" "$CLEAR"
 }
 
 while true; do
