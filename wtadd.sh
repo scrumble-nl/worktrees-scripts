@@ -49,7 +49,7 @@ function warn {
 # I tried to figure out how to actually determine the filesystem support for
 # copy-on-write, but did not find any good references, so I'm falling back on
 # "try and see if it fails"
-function cp_cow {    
+function cp_cow {
     if ! /bin/cp -Rc "$1" "$2" 2>/dev/null; then
         if ! /bin/cp -R --reflink "$1" "$2" 2>/dev/null; then
             if ! /bin/cp -R "$1" "$2" 2>/dev/null; then
@@ -76,11 +76,11 @@ function _worktree {
     # "quick-fix" stays unchanged
     # https://www.tldp.org/LDP/abs/html/parameter-substitution.html
     dirname=${branchname//\//_}
-    
+
     is_worktree=$(git rev-parse --is-inside-work-tree)
-    if $is_worktree; then        
-        parent_dir=".."    
-    else        
+    if $is_worktree; then
+        parent_dir=".."
+    else
         parent_dir="."
     fi
 
@@ -118,6 +118,11 @@ function _worktree {
       cp_cow node_modules "$parent_dir/$dirname"/node_modules
     fi
 
+    # copy all vendor packages
+    if [ -d "vendor" ]; then
+      cp_cow vendor "$parent_dir/$dirname"/vendor
+    fi
+
     # this will fail for any files with \n in their names. don't do that.
     IFS=$'\n'
 
@@ -144,10 +149,10 @@ function _worktree {
     fi
     if [ "$platform" = "Darwin" ]; then
         files_to_copy=( $(find -E $copy_source -not -path '*node_modules*' -and \
-                -iregex '.*\/\.(envrc|env|env.local|tool-versions|mise.toml)' ) )
+                -iregex '.*\/(\.(envrc|env|env.local|tool-versions|mise.toml|phpstorm\.meta\.php)|(_ide_helper_models\.php|_ide_helper\.php))' ) )
     else
         files_to_copy=( $(find $copy_source -not -path '*node_modules*' -and \
-                -regextype posix-extended -iregex '.*\/\.(envrc|env|env.local|tool-versions|mise.toml)' ) )
+                -regextype posix-extended -iregex '.*\/(\.(envrc|env|env.local|tool-versions|mise.toml|phpstorm\.meta\.php)|(_ide_helper_models\.php|_ide_helper\.php))' ) )
     fi
 
     for f in "${files_to_copy[@]}"; do
@@ -164,14 +169,21 @@ function _worktree {
     fi
 
     git -C "$parent_dir/$dirname" pull
-    
+
 
     # if there was an envrc file, tell direnv that it's ok to run it
     if [ -f "$parent_dir/$dirname/.envrc" ]; then
         direnv allow "$parent_dir/$dirname"
     fi
-        
-    printf "%bcreated worktree %s%b\n" "$GREEN" "$parent_dir/$dirname" "$CLEAR"   
+
+    printf "%bcreated worktree %s%b\n" "$GREEN" "$parent_dir/$dirname" "$CLEAR"
+
+    full_path=$(realpath "$parent_dir")
+
+    # Extract the base name (current directory name) from the full path
+    current_dir=$(basename "$full_path")
+
+    cd "$parent_dir/$dirname" && herd link "$current_dir-$dirname" && cd ..
 }
 
 while true; do
