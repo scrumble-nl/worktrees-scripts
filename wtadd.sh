@@ -120,7 +120,7 @@ function _worktree {
 
     # copy all vendor packages
     if [ -d "vendor" ]; then
-      cp_cow node_modules "$parent_dir/$dirname"/node_modules
+      cp_cow vendor "$parent_dir/$dirname"/vendor
     fi
 
     # this will fail for any files with \n in their names. don't do that.
@@ -149,10 +149,10 @@ function _worktree {
     fi
     if [ "$platform" = "Darwin" ]; then
         files_to_copy=( $(find -E $copy_source -not -path '*node_modules*' -and \
-                -iregex '.*\/(\.(envrc|env|env.local|tool-versions|mise.toml)|(_ide_helper_models\.php|_ide_helper\.php)' ) )
+                -iregex '.*\/(\.(envrc|env|env.local|tool-versions|mise.toml|phpstorm\.meta\.php)|(_ide_helper_models\.php|_ide_helper\.php))' ) )
     else
         files_to_copy=( $(find $copy_source -not -path '*node_modules*' -and \
-                -regextype posix-extended -iregex '.*\/(\.(envrc|env|env.local|tool-versions|mise.toml)|(_ide_helper_models\.php|_ide_helper\.php)' ) )
+                -regextype posix-extended -iregex '.*\/(\.(envrc|env|env.local|tool-versions|mise.toml|phpstorm\.meta\.php)|(_ide_helper_models\.php|_ide_helper\.php))' ) )
     fi
 
     for f in "${files_to_copy[@]}"; do
@@ -177,6 +177,13 @@ function _worktree {
     fi
 
     printf "%bcreated worktree %s%b\n" "$GREEN" "$parent_dir/$dirname" "$CLEAR"
+
+    full_path=$(realpath "$parent_dir")
+
+    # Extract the base name (current directory name) from the full path
+    current_dir=$(basename "$full_path")
+
+    cd "$parent_dir/$dirname" && herd link "$current_dir-$dirname" && cd ..
 }
 
 while true; do
