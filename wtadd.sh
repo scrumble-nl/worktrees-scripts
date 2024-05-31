@@ -149,10 +149,10 @@ function _worktree {
     fi
     if [ "$platform" = "Darwin" ]; then
         files_to_copy=( $(find -E $copy_source -not -path '*node_modules*' -and \
-                -iregex '.*\/\.(envrc|env|env.local|tool-versions|mise.toml)' ) )
+                -iregex '.*\/(\.(envrc|env|env.local|tool-versions|mise.toml)|(_ide_helper_models\.php|_ide_helper\.php)' ) )
     else
         files_to_copy=( $(find $copy_source -not -path '*node_modules*' -and \
-                -regextype posix-extended -iregex '.*\/\.(envrc|env|env.local|tool-versions|mise.toml)' ) )
+                -regextype posix-extended -iregex '.*\/(\.(envrc|env|env.local|tool-versions|mise.toml)|(_ide_helper_models\.php|_ide_helper\.php)' ) )
     fi
 
     for f in "${files_to_copy[@]}"; do
